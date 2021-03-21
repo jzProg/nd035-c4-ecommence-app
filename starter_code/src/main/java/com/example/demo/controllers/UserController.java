@@ -1,5 +1,7 @@
 package com.example.demo.controllers;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -19,6 +21,8 @@ import com.example.demo.model.requests.CreateUserRequest;
 @RestController
 @RequestMapping("/api/user")
 public class UserController {
+
+	private final Logger logger = LogManager.getLogger(UserController.class);
 	
 	@Autowired
 	private UserRepository userRepository;
@@ -47,12 +51,16 @@ public class UserController {
 		Cart cart = new Cart();
 		cartRepository.save(cart);
 		user.setCart(cart);
-		if(createUserRequest.getPassword().length()<7 ||
-				!createUserRequest.getPassword().equals(createUserRequest.getConfirmPassword())){
+		logger.info("Cart configured for User " + createUserRequest.getUsername());
+		String password = createUserRequest.getPassword();
+		String confirmPassword = createUserRequest.getConfirmPassword();
+		if(password.length() < 7 || !password.equals(confirmPassword)) {
+			logger.error("Invalid combination of password: " + password + " and confirm password: " + confirmPassword);
 			return ResponseEntity.badRequest().build();
 		}
 		user.setPassword(bCryptPasswordEncoder.encode(createUserRequest.getPassword()));
 		userRepository.save(user);
+		logger.info("User " + createUserRequest.getUsername() + " successfully registered!");
 		return ResponseEntity.ok(user);
 	}
 }
